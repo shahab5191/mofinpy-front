@@ -1,0 +1,98 @@
+'use client'
+
+import { Checkbox } from "@mui/material"
+import { useCallback, useEffect, useState } from "react"
+
+export interface Column {
+  field: string
+  label: string
+  width?: number
+}
+
+interface Props {
+  columns: Column[]
+  data: Record<string, any>[]
+}
+export const DataTable = (props: Props) => {
+  const [checks, setChecks] = useState<boolean[]>()
+  const [allChecks, setAllChecks] = useState(false)
+
+  const calcWidth = useCallback((w: number) => {
+    const widthUnit = props.columns.reduce((acc, curr) => {
+      return acc + (curr.width ? curr.width : 1)
+    }, 0) * 100 / (props.columns.length + 1)
+
+    return w * widthUnit + "%"
+  }, [props.columns])
+
+  const toggleAllChecks = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setAllChecks(e.target.checked)
+    const tempChecks: boolean[] = []
+    props.data.forEach(() => {
+      tempChecks.push(e.target.checked)
+    })
+    setChecks(tempChecks)
+  }, [props.data])
+
+  const checkClicked = useCallback((num: number) => {
+    setChecks(curr => {
+      if (curr === undefined) return curr
+      curr[num] = !curr[num]
+      let allChecked = true
+      curr?.forEach((check, index) => {
+        if (index === num) {
+          allChecked &&= !check
+        } else {
+          allChecked &&= check
+        }
+      })
+      setAllChecks(allChecked)
+      return [...curr]
+    })
+  }, [])
+
+  useEffect(() => {
+    const tempChecks: boolean[] = []
+    props.data.forEach(() => {
+      tempChecks.push(false)
+    })
+    setChecks([...tempChecks])
+  }, [props.data])
+
+
+  return (
+    <div className="flex flex-col w-full h-[calc(100%-1rem)] box-border my-4 bg-[var(--bg-primary)] p-4 rounded-lg border-[1px] border-[var(--border-bg-primary)]">
+      <div className="flex bg-[var(--bg-secondary)] rounded-lg py-1 px-2 mb-2 border-[1px] border-[var(--border-bg-secondary)] box-border">
+        <Checkbox onChange={toggleAllChecks} checked={allChecks} />
+        {props.columns.map((item, k) => {
+          return <div
+            key={k}
+            style={{ width: calcWidth(item.width ? item.width : 1) }}
+            className="flex items-center"
+          >{item.label}</div>
+        })}
+        <div style={{ width: calcWidth(0.5) }} className="flex items-center">Actions</div>
+      </div>
+      <div className="overflow-y-auto h-full box-border">
+        {props.data.map((row, i) => {
+          return (
+            <div
+              key={i}
+              className="flex border-b-[1px] border-[var(--border-bg-primary)] py-1 hover:bg-[var(--table-item-bg-hover)] transition-colors px-2"
+            >
+              <Checkbox checked={checks === undefined ? false : checks[i]} onClick={(_) => checkClicked(i)} />
+              {props.columns.map((col, j) => {
+                return <div
+                  key={j}
+                  style={{ width: calcWidth(col.width ? col.width : 1) }}
+                  className="flex items-center"
+                >{row[col.field]}</div>
+              })}
+              <div style={{ width: calcWidth(0.5) }} className="flex items-center">edit</div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}

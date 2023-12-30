@@ -13,15 +13,32 @@
     --foreground-rgb: 255, 255, 255;
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
+    --bg-primary: rgba(23, 23, 27, 0.6);
+    --bg-secondary: rgba(17, 17, 20,1);
+    --table-item-bg-hover: rgba(30,30,37,.9);
+    --border-bg-primary: #2e2e2e;
+    --border-bg-secondary: #242424;
   }
 }
+*{
+  border-style: solid;
+  border-width: 0;
+}
+button {
+  border:none;
+  color: white;
+}
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+h1, h2, h3, h4, h5, p{
+  margin: 0;
+}
+a {
+  text-decoration: none;
+  color: white;
+}
+body{
+  margin: 0;
+  width: 100vw;
+  height: 100dvh;
+  background: url('/main-bg.webp');
 }
