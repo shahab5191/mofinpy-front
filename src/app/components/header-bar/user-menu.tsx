@@ -4,7 +4,9 @@ import { MenuButton } from '@mui/base/MenuButton'
 import { Menu } from '@mui/base/Menu'
 import { MenuItem } from '@mui/material';
 import { IoIosArrowDown } from "react-icons/io";
-export const UserMenu = () => {
+
+interface Props {}
+export const UserMenu = (props:Props) => {
   return (
     <Dropdown>
       <MenuButton

@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import NavBar from './components/nav-menu/navMenu'
-const inter = Inter({ subsets: ['latin'] })
 import { MdOutlineInventory } from "react-icons/md";
 import { LuLayoutDashboard } from "react-icons/lu";
 import { PiFactory, PiWarehouse } from "react-icons/pi";
@@ -12,6 +10,7 @@ import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -72,14 +71,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="flex w-full h-full">
-
-         <NavBar>{menuItems}</NavBar>
-          <div className="bg-[#0e0e0e] bg-opacity-90 w-[100%]">
-            <HeaderBar />
-            {children}
+          <div className="flex w-full h-full">
+            <NavBar>{menuItems}</NavBar>
+            <div className="bg-[#0e0e0e] bg-opacity-90 w-[100%]">
+              <HeaderBar />
+              {children}
+            </div>
           </div>
-        </div>
       </body>
     </html>
   )

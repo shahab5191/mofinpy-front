@@ -28,7 +28,7 @@ axiosInstance.interceptors.response.use(
     if ('response' in error) {
       switch (error.response.status) {
         case 401:
-          return redirect('/login')
+          return redirect('user/login')
       }
     }
 
