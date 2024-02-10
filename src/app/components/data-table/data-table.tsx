@@ -1,9 +1,8 @@
 'use client'
 
 import { themeOptions } from "@/app/theme"
-import { Checkbox, CssBaseline, Pagination, ThemeProvider } from "@mui/material"
+import { CssBaseline, Pagination, ThemeProvider } from "@mui/material"
 import React, { useCallback, useEffect, useState } from "react"
-import { TableActions } from "./table-actions"
 import { TableDataRow } from "./table-data-row"
 import { TableHeaderRow } from "./table-header-row"
 
@@ -151,8 +150,7 @@ export const DataTable = (props: Props) => {
   return (
     <ThemeProvider theme={themeOptions}>
       <CssBaseline />
-      <div className="flex flex-col w-full h-[calc(100%-1rem)] box-border my-4 bg-[var(--bg-primary)] p-4 rounded-lg border-[1px] border-[var(--border-bg-primary)]">
-        <TableHeaderRow
+              <TableHeaderRow
           checkbox={props.checkbox}
           actions={props.actions}
           toggleCheckBoxes={toggleAllChecks}
@@ -188,7 +186,6 @@ export const DataTable = (props: Props) => {
             size="small"
           />
         </div>
-      </div>
     </ThemeProvider>
   )
 }
