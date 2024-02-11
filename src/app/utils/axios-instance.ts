@@ -5,8 +5,9 @@ import { getCookieByName } from "./get-cookies";
 const axiosInstance = axios.create({
   baseURL: 'http://localhost:5000/api',
   headers: {
-    'Content-Type': 'application/json'
-  },
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': "*"
+  }
 })
 
 axiosInstance.interceptors.request.use(
