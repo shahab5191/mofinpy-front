@@ -1,16 +1,17 @@
 'use client'
 
 import React, { useState } from "react"
-import { DataTable } from "../components/data-table/data-table"
+import { DataTable, type Pagination } from "../components/data-table/data-table"
 import { type Column } from "../components/data-table/data-table"
 import axiosInstance from "../utils/axios-instance"
 import { PAGES_PREFIX } from "../utils/page-prefixes"
-import { TableImageItem } from "../components/data-table/table-item-image-label"
 import { Button, CssBaseline } from "@mui/material"
 import { ThemeProvider } from "@emotion/react"
 import { themeOptions } from "../theme"
-import Dialog from "@mui/material/Dialog"
 import { AddPODialog } from "../components/modals/add-po-dialog"
+import { useAppDispatch, useAppSelector } from "@/lib/hooks"
+import { type InventoryItem, LoadingStates, getInventoryTable, setTable } from "../../lib/features/inventory/inventory-slice"
+
 
 const columns: Column[] = [
   { field: 'id', label: 'ID', width: .2 },
@@ -31,39 +32,58 @@ const onDelete = (id: string) => {
   console.log(id)
 }
 
-const convertData = (data: any): Record<string, any>[] => {
-  const tableData: Record<string, any>[] = []
+const convertData = (data: any): InventoryItem[] => {
+  const tableData: InventoryItem[] = []
   data.map((row: any) => {
-    const newRow: Record<string, any> = {}
-    newRow['id'] = row['id']
-    newRow['item'] = TableImageItem({ label: row['item']['name'], href: `${PAGES_PREFIX.item}/${row["item"]["id"]}`, image: row['item']['image'] ? row['item']['image']['filename'] : null })
-    newRow['warehouse'] = <a href={`${PAGES_PREFIX.warehouse}/${row["warehouse"]["id"]}`}>{row['warehouse']['name']}</a>
-    newRow['price'] = row['price']
-    newRow['qty'] = row['quantity']
-    newRow['provider'] = <a href={`${PAGES_PREFIX.provider}/${row['provider']['id']}`}>{row['provider']['name']}</a>
-    const newDate = new Date(row['update_date'])
-    newRow['date'] = newDate.toLocaleDateString("en-GB")
-    newRow['purchase_order'] = <a href={`${PAGES_PREFIX.purchaseOrder}/${row['purchase_order']['id']}`}>{row['purchase_order']['id']}</a>
+    const newRow: InventoryItem = {
+      id: row['id'],
+      item: {
+        label: row['item']['name'],
+        href: `${PAGES_PREFIX.item}/${row["item"]["id"]}`,
+        image: row['item']['image'] ? row['item']['image']['filename'] : null
+      },
+      warehouse: {
+        href: `${PAGES_PREFIX.warehouse}/${row["warehouse"]["id"]}`,
+        name: row['warehouse']['name']
+      },
+      price: row['price'],
+      qty: row['quantity'],
+      provider: {
+        href: `${PAGES_PREFIX.provider}/${row['provider']['id']}`,
+        name: row['provider']['name']
+      },
+      date: new Date(row['update_date']).toLocaleDateString("en-GB"),
+      purchaseOrder: {
+        href: `${PAGES_PREFIX.purchaseOrder}/${row['purchase_order']['id']}`,
+        name: row['purchase_order']['id']
+      },
+      loadingState: LoadingStates.loaded
+    }
     tableData.push(newRow)
   })
   return tableData
 }
 
 export default function InventoryTable() {
+  const dispatch = useAppDispatch()
+  const inventoryTable = useAppSelector(getInventoryTable)
   const [openPOModal, setOpenPOModal] = useState(false)
-  const onPageChange = async (limit: number, offset: number) => {
+  const [pagination, setPagination] = useState<Pagination>({ limit: 0, offset: 0, count: 0 })
+
+  const fetchFunction = async (limit: number, offset: number) => {
     let result
-    let tableData: Record<string, any>[] = []
+    let tableData: InventoryItem[] = []
     let count = 0
     try {
       result = await axiosInstance.get('/inventory')
       const data = result.data.items
       tableData = convertData(data)
+      dispatch(setTable(tableData))
       count = result.data.pagination.count
     } catch (error) {
       console.log(error)
     }
-    return ({ data: tableData, pagination: { limit, offset, count } })
+    setPagination({ limit, offset, count })
   }
 
   const addPOClicked = (_: any) => {
@@ -89,11 +109,11 @@ export default function InventoryTable() {
             </div>
             <DataTable
               editCallback={onEdit}
-              deleteCallback={onDelete}
-              columns={columns}
+              deleteCallback={onDelete} columns={columns}
               checkbox
               actions
-              fetchFunction={onPageChange}
+              fetchFunction={fetchFunction}
+              data={{ table: inventoryTable, pagination }}
             />
           </div>
         </div>

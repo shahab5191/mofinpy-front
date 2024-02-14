@@ -13,19 +13,22 @@ export interface Column {
   width?: number
 }
 
-interface PageChangeReturn {
-  data: any,
-  pagination: {
+export interface Pagination {
     limit: number
     offset: number
     count: number
-  }
+}
+
+interface Data {
+  table: Record<string, React.ReactNode>[],
+  pagination: Pagination
 }
 
 type Props = {
   columns: Column[]
   checkbox?: boolean
-  fetchFunction: (limit: number, offset: number) => Promise<PageChangeReturn>
+  data: Data
+  fetchFunction: (limit: number, offset: number) => void
 } & ({
   actions: true;
   editCallback: (id: string) => void
@@ -46,7 +49,6 @@ export const DataTable = (props: Props) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [count, setCount] = useState(0)
   const [limit, setLimit] = useState(10)
-  const [data, setData] = useState<Record<string, any>[]>([])
   const [editing, setEditing] = useState<boolean[]>(props.columns.map(() => false))
 
   const calcWidthUnit = useCallback(() => {
@@ -80,11 +82,11 @@ export const DataTable = (props: Props) => {
   const toggleAllChecks = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setAllChecks(e.target.checked)
     const tempChecks: boolean[] = []
-    data.forEach(() => {
+    props.data.table.forEach(() => {
       tempChecks.push(e.target.checked)
     })
     setChecks(tempChecks)
-  }, [data])
+  }, [props.data])
 
   const checkClicked = useCallback((num: number) => {
     setChecks(curr => {
@@ -107,19 +109,17 @@ export const DataTable = (props: Props) => {
   const pageChangeHandler = async (_: any, page: number) => {
     if (currentPage === page) return
     const offset = (page - 1) * limit
-    const { pagination, data: fetchedData } = await props.fetchFunction(limit, offset)
+    props.fetchFunction(limit, offset)
     setCurrentPage(page)
-    setCount(pagination.count)
-    setData(fetchedData)
+    setCount(props.data.pagination.count)
   }
   //useEffect to fetch data
   useEffect(() => {
     (async () => {
-      const { pagination, data: fetchedData } = await props.fetchFunction(limit, 0)
-      setCurrentPage(Math.floor(pagination.offset / limit))
-      setCount(pagination.count)
-      setData(fetchedData)
-      setChecks(fetchedData.map(() => false))
+      props.fetchFunction(limit, 0)
+      setCurrentPage(Math.floor(props.data.pagination.offset / limit))
+      setCount(props.data.pagination.count)
+      setChecks(props.data.table.map(() => false))
     })()
   }, [props, limit])
 
@@ -159,7 +159,7 @@ export const DataTable = (props: Props) => {
           colWidths={colWidth}
         />
         <div className="overflow-y-auto h-full box-border">
-          {data.map((row, i) => {
+          {props.data.table.map((row, i) => {
             return (
               <TableDataRow
                 id={i}

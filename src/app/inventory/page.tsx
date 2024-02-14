@@ -1,11 +1,11 @@
 import axiosInstance from "../utils/axios-instance"
-import InventoryTable from "./inventory-table"
+import { InventoryProvider } from "./inventory-provider"
 
 const Inventory = async () => {
   await axiosInstance('/users/current')
 
   return (
-    <InventoryTable />
+    <InventoryProvider />
   )
 }
 
