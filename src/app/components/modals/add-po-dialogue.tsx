@@ -15,7 +15,7 @@ import {
   Typography,
 } from "@mui/material"
 import { Controller, useForm } from "react-hook-form"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { IoCloseOutline } from "react-icons/io5"
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers"
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs"
@@ -66,6 +66,7 @@ export const AddPODialog = (props: Props) => {
   const [itemsList, setItemsList] = useState<Array<ItemAutocompletion>>([])
   const [providersList, setProvidersList] = useState<Array<ItemAutocompletion>>([])
   const [warehousesList, setWarehousesList] = useState<Array<ItemAutocompletion>>([])
+  const [currencyList, setCurrencyList] = useState<Array<GeneralAutocompletion>>([])
   const [selectedItem, setSelectedItem] = useState<ItemAutocompletion | string>("")
   const controller = useMemo(() => new AbortController(), [])
 
@@ -82,7 +83,7 @@ export const AddPODialog = (props: Props) => {
       state: data.state,
       warehouse_id: data.warehouse_id
     })
-  },[])
+  }, [])
 
   const itemIdChangeHandler = useCallback((item: ItemAutocompletion | string | null) => {
     if (typeof item === "string" || item === null) return
@@ -90,19 +91,19 @@ export const AddPODialog = (props: Props) => {
     setValue("item_id", item.id)
   }, [setValue])
 
-  const searchAndFillList = useCallback(async (value: string, endpoint: string, fillCallback: (result: any)=>void): Promise<void> => {
-    if(value.length < 3) return
+  const searchAndFillList = useCallback(async (value: string, endpoint: string, fillCallback: (result: any) => void): Promise<void> => {
+    if (value.length < 3) return
     controller.abort()
     const result = await axiosInstance.get(`/${endpoint}/?query=${value}`)
     const items: ItemAutocompletion[] = result.data.items.map((item: any) => {
       return {
         id: item.id,
         name: item.name,
-        image: item.image? item.image : null
+        image: item.image ? item.image.filename : null
       }
     })
     fillCallback(items)
-  },[controller])
+  }, [controller])
 
   const warehouseIdChangeHandler = useCallback((item: GeneralAutocompletion | string | null) => {
     if (typeof item === "string" || item === null) return
@@ -135,6 +136,18 @@ export const AddPODialog = (props: Props) => {
     const newItem = [{ id: 3, image: "image", name: "added" }]
     setItemsList(newItem)
     setSelectedItem(newItem[0])
+  }, [])
+
+  useEffect(() => {
+    (async () => {
+      const result = await axiosInstance.get('/currency/')
+      setCurrencyList(result.data.items.map((item: any) => {
+        return {
+          id: item.id,
+          name: item.unit
+        }
+      }))
+    })()
   }, [])
 
   return (
@@ -327,7 +340,9 @@ export const AddPODialog = (props: Props) => {
                         label="Currency"
                         {...field}
                       >
-                        <MenuItem value={"1"}>Euro</MenuItem>
+                        {currencyList.length > 0 && currencyList.map((currency) => {
+                          return (<MenuItem key={currency.id} value={currency.id}>{currency.name}</MenuItem>)
+                        })}
                       </Select>
                     </FormControl>
                   )}
@@ -450,7 +465,7 @@ const OptionsRender = (props: {
     </li>
   }
   return (
-    <li {...restProps} className="">
+    <li {...restProps}>
       <TableImageItem label={props.option.name} image={props.option.image} />
     </li>
   )
