@@ -113,15 +113,6 @@ export const DataTable = (props: Props) => {
     setCurrentPage(page)
     setCount(props.data.pagination.count)
   }
-  //useEffect to fetch data
-  useEffect(() => {
-    (async () => {
-      props.fetchFunction(limit, 0)
-      setCurrentPage(Math.floor(props.data.pagination.offset / limit))
-      setCount(props.data.pagination.count)
-      setChecks(props.data.table.map(() => false))
-    })()
-  }, [props, limit])
 
   //Calculating each col width %
   useEffect(() => {

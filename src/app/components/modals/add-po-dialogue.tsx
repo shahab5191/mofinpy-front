@@ -29,20 +29,16 @@ interface Props {
   open: boolean
   onClose: () => void
 }
-const testOptions: Array<ItemAutocompletion> = [
-  { name: "item1", image: "available", id: "1" },
-  { name: "item2", image: "sold", id: "2" },
-]
 
 interface ItemAutocompletion {
   name: string
   image: string
-  id: string
+  id: number
 }
 
 interface GeneralAutocompletion {
   name: string
-  id: string
+  id: number
 }
 
 enum ItemStates {
@@ -53,27 +49,40 @@ enum ItemStates {
 }
 
 interface Inputs {
-  item_id: string
+  item_id: number
   price: number
-  currency_id: string
+  currency_id: number
   base_currency_rate: number
   quantity: number
-  provider_id: string
+  provider_id: number
   creation_date: Date
   make_unique: boolean
   state: ItemStates
-  warehouse_id: string
+  warehouse_id: number
 }
 
 export const AddPODialog = (props: Props) => {
   const { handleSubmit, control, setValue, register } = useForm<Inputs>()
   const [itemsList, setItemsList] = useState<Array<ItemAutocompletion>>([])
+  const [providersList, setProvidersList] = useState<Array<ItemAutocompletion>>([])
+  const [warehousesList, setWarehousesList] = useState<Array<ItemAutocompletion>>([])
   const [selectedItem, setSelectedItem] = useState<ItemAutocompletion | string>("")
   const controller = useMemo(() => new AbortController(), [])
 
-  const onSubmit = (data: Inputs) => {
-    console.log(data)
-  }
+  const onSubmit = useCallback(async (data: Inputs) => {
+    const result = await axiosInstance.post('/purchases/', {
+      item_id: data.item_id,
+      price: data.price,
+      currency_id: 1, //change it to dynamic
+      base_currency_rate: data.base_currency_rate,
+      quantity: data.quantity,
+      provider_id: data.provider_id,
+      creation_date: data.creation_date,
+      make_unique: data.make_unique,
+      state: data.state,
+      warehouse_id: data.warehouse_id
+    })
+  },[])
 
   const itemIdChangeHandler = useCallback((item: ItemAutocompletion | string | null) => {
     if (typeof item === "string" || item === null) return
@@ -81,12 +90,25 @@ export const AddPODialog = (props: Props) => {
     setValue("item_id", item.id)
   }, [setValue])
 
-  const itemInputChangeHandler = useCallback(async (value: string) => {
-    if (value.length < 3) return
+  const searchAndFillList = useCallback(async (value: string, endpoint: string, fillCallback: (result: any)=>void): Promise<void> => {
+    if(value.length < 3) return
     controller.abort()
-    const result = await axiosInstance.get('/items/')
-    console.log(result.data)
-  }, [controller])
+    const result = await axiosInstance.get(`/${endpoint}/?query=${value}`)
+    const items: ItemAutocompletion[] = result.data.items.map((item: any) => {
+      return {
+        id: item.id,
+        name: item.name,
+        image: item.image? item.image : null
+      }
+    })
+    fillCallback(items)
+  },[controller])
+
+  const warehouseIdChangeHandler = useCallback((item: GeneralAutocompletion | string | null) => {
+    if (typeof item === "string" || item === null) return
+    setValue("warehouse_id", item.id)
+  }, [setValue])
+
 
   const providerIdChangeHandler = useCallback((item: GeneralAutocompletion | string | null) => {
     if (typeof item === "string" || item === null) return
@@ -102,19 +124,15 @@ export const AddPODialog = (props: Props) => {
     setValue("creation_date", date.utc().toDate())
   }, [setValue])
 
-  const warehouseIdChangeHandler = useCallback((item: GeneralAutocompletion | string | null) => {
-    if (typeof item === "string" || item === null) return
-    setValue("warehouse_id", item.id)
-  }, [setValue])
-
   const bcrChangeHandler = useCallback((val: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(val.currentTarget.value)
     if (isNaN(value)) return
+    console.log(value)
     setValue("base_currency_rate", value)
   }, [setValue])
 
   const addItemHandler = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const newItem = [{ id: "3", image: "image", name: "added" }]
+    const newItem = [{ id: 3, image: "image", name: "added" }]
     setItemsList(newItem)
     setSelectedItem(newItem[0])
   }, [])
@@ -176,7 +194,7 @@ export const AddPODialog = (props: Props) => {
                         borderColor: "#2e2e2e"
                       }
                     }}
-                    onInputChange={(_, value) => itemInputChangeHandler(value)}
+                    onInputChange={(_, value) => searchAndFillList(value, 'items', setItemsList)}
                     onChange={(_, item) => itemIdChangeHandler(item)}
                     renderOption={(props: any, option) => (
                       <OptionsRender
@@ -299,7 +317,7 @@ export const AddPODialog = (props: Props) => {
                 <Controller
                   name="currency_id"
                   control={control}
-                  defaultValue={"1"}
+                  defaultValue={1}
                   render={({ field }) => (
                     <FormControl fullWidth size="small">
                       <InputLabel id="po-item-state-label">Currency</InputLabel>
@@ -324,14 +342,15 @@ export const AddPODialog = (props: Props) => {
                   <Autocomplete
                     freeSolo
                     id="Item-select-list"
-                    options={testOptions}
+                    options={providersList}
                     getOptionLabel={(option: GeneralAutocompletion | string) => {
                       if (typeof option === "string") return option
                       return option.name
                     }}
                     renderInput={(params) => (
-                      <TextField {...params} label="Search or add item" required />
+                      <TextField {...params} label="Search or add Provider" required />
                     )}
+                    onInputChange={(_, value) => searchAndFillList(value, 'providers', setProvidersList)}
                     onChange={(_, item) => providerIdChangeHandler(item)}
                     renderOption={(props: any, option) => (
                       <li {...props} key={props['key']}>{option.name}</li>
@@ -368,7 +387,7 @@ export const AddPODialog = (props: Props) => {
                   <Autocomplete
                     freeSolo
                     id="warehouse-select-list"
-                    options={testOptions}
+                    options={warehousesList}
                     getOptionLabel={(option: GeneralAutocompletion | string) => {
                       if (typeof option === "string") return option
                       return option.name
@@ -376,6 +395,7 @@ export const AddPODialog = (props: Props) => {
                     renderInput={(params) => (
                       <TextField {...params} label="Search or add Warehouse" required />
                     )}
+                    onInputChange={(_, value) => searchAndFillList(value, "warehouses", setWarehousesList)}
                     onChange={(_, item) => warehouseIdChangeHandler(item)}
                     renderOption={(props: any, option) => (
                       <li {...props} key={props['key']}>{option.name}</li>
@@ -409,7 +429,7 @@ export const AddPODialog = (props: Props) => {
           </div>
           <div className="flex gap-2 mt-2 justify-end">
             <Button variant="outlined" onClick={() => { props.onClose() }} className="font-light" size="small">Cancel</Button>
-            <Button variant="contained" type="submit" className="font-light" size="small">
+            <Button variant="contained" type="submit" className="font-light" size="small" >
               Create
             </Button>
           </div>

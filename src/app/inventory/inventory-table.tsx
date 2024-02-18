@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { DataTable, type Pagination } from "../components/data-table/data-table"
 import { type Column } from "../components/data-table/data-table"
 import axiosInstance from "../utils/axios-instance"
@@ -11,6 +11,7 @@ import { themeOptions } from "../theme"
 import { AddPODialog } from "../components/modals/add-po-dialog"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { type InventoryItem, LoadingStates, getInventoryTable, setTable } from "../../lib/features/inventory/inventory-slice"
+import { DATA_LIMIT, DATA_OFFSET } from "../utils/defaults"
 
 
 const columns: Column[] = [
@@ -21,7 +22,7 @@ const columns: Column[] = [
   { field: 'qty', label: 'QTY', width: .4 },
   { field: 'provider', label: 'Provider' },
   { field: 'date', label: 'Date' },
-  { field: 'purchase_order', label: 'Purchase Order', width: .6 },
+  { field: 'purchaseOrder', label: 'Purchase Order', width: .6 },
 ]
 
 const onEdit = (id: string) => {
@@ -70,7 +71,7 @@ export default function InventoryTable() {
   const [openPOModal, setOpenPOModal] = useState(false)
   const [pagination, setPagination] = useState<Pagination>({ limit: 0, offset: 0, count: 0 })
 
-  const fetchFunction = async (limit: number, offset: number) => {
+  const fetchFunction = useCallback(async (limit: number = DATA_LIMIT, offset: number = DATA_OFFSET) => {
     let result
     let tableData: InventoryItem[] = []
     let count = 0
@@ -84,12 +85,15 @@ export default function InventoryTable() {
       console.log(error)
     }
     setPagination({ limit, offset, count })
-  }
+  }, [dispatch])
 
   const addPOClicked = (_: any) => {
     setOpenPOModal(current => !current)
   }
 
+  useEffect(() => {
+    fetchFunction()
+  }, [fetchFunction])
   return (
     <ThemeProvider theme={themeOptions}>
       <CssBaseline />
